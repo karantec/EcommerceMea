@@ -7,7 +7,7 @@ const uniqid = require("uniqid");
 
 const asyncHandler = require("express-async-handler");
 const { generateToken } = require("../config/jwtToken");
-const validateMongoDbId = require("../utils/validateMongodbId"); // restored
+// const validateMongoDbId = require("../utils/validateMongodbId"); // restored
 const { generateRefreshToken } = require("../config/refreshtoken");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
@@ -118,7 +118,7 @@ const logout = asyncHandler(async (req, res) => {
 // Update a user
 const updatedUser = asyncHandler(async (req, res) => {
   const { _id } = req.user;
-  validateMongoDbId(_id);
+  // validateMongoDbId(_id);
 
   try {
     const updatedUser = await User.findByIdAndUpdate(
@@ -142,7 +142,7 @@ const updatedUser = asyncHandler(async (req, res) => {
 // save user Address
 const saveAddress = asyncHandler(async (req, res, next) => {
   const { _id } = req.user;
-  validateMongoDbId(_id);
+  // //validateMongoDbId(_id);
 
   try {
     const updatedUser = await User.findByIdAndUpdate(
@@ -173,7 +173,7 @@ const getallUser = asyncHandler(async (req, res) => {
 // Get a single user
 const getaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validateMongoDbId(id);
+  //validateMongoDbId(id);
 
   try {
     const getaUser = await User.findById(id);
@@ -188,7 +188,7 @@ const getaUser = asyncHandler(async (req, res) => {
 // Delete a user
 const deleteaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validateMongoDbId(id);
+  //validateMongoDbId(id);
 
   try {
     const deleteaUser = await User.findByIdAndDelete(id);
@@ -202,7 +202,7 @@ const deleteaUser = asyncHandler(async (req, res) => {
 
 const blockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validateMongoDbId(id);
+  // validateMongoDbId(id);
 
   try {
     const blockusr = await User.findByIdAndUpdate(
@@ -218,7 +218,7 @@ const blockUser = asyncHandler(async (req, res) => {
 
 const unblockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validateMongoDbId(id);
+  // validateMongoDbId(id);
 
   try {
     const unblock = await User.findByIdAndUpdate(
@@ -237,7 +237,7 @@ const unblockUser = asyncHandler(async (req, res) => {
 const updatePassword = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   const { password } = req.body;
-  validateMongoDbId(_id);
+  // validateMongoDbId(_id);
   const user = await User.findById(_id);
   if (password) {
     user.password = password;
@@ -302,7 +302,7 @@ const userCart = asyncHandler(async (req, res) => {
   const { productId, color, quantity, price } = req.body;
 
   const { _id } = req.user;
-  validateMongoDbId(_id);
+  // validateMongoDbId(_id);
   try {
     let newCart = await new Cart({
       userId: _id,
@@ -319,7 +319,7 @@ const userCart = asyncHandler(async (req, res) => {
 
 const getUserCart = asyncHandler(async (req, res) => {
   const { _id } = req.user;
-  validateMongoDbId(_id);
+  // validateMongoDbId(_id);
   try {
     const cart = await Cart.find({ userId: _id })
       .populate("productId")
@@ -333,7 +333,7 @@ const getUserCart = asyncHandler(async (req, res) => {
 const removeProductFromCart = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   const { cartItemId } = req.params;
-  validateMongoDbId(_id);
+  // validateMongoDbId(_id);
   try {
     const deleteProductFromcart = await Cart.deleteOne({
       userId: _id,
@@ -348,7 +348,7 @@ const removeProductFromCart = asyncHandler(async (req, res) => {
 
 const emptyCart = asyncHandler(async (req, res) => {
   const { _id } = req.user;
-  validateMongoDbId(_id);
+  // validateMongoDbId(_id);
   try {
     const deleteCart = await Cart.deleteMany({
       userId: _id,
@@ -363,7 +363,7 @@ const emptyCart = asyncHandler(async (req, res) => {
 const updateProductQuantityFromCart = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   const { cartItemId, newQuantity } = req.params;
-  validateMongoDbId(_id);
+  // validateMongoDbId(_id);
   try {
     const cartItem = await Cart.findOne({
       userId: _id,
