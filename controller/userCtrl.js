@@ -7,22 +7,35 @@ const uniqid = require("uniqid");
 
 const asyncHandler = require("express-async-handler");
 const { generateToken } = require("../config/jwtToken");
-// const validateMongoDbId = require("../utils/validateMongodbId"); // restored
+const validateMongoDbId = require("../utils/validateMongoDbId");
 const { generateRefreshToken } = require("../config/refreshtoken");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const sendEmail = require("./emailCtrl");
 const { createPasswordResetToken } = require("../models/userModel");
-
+url;
 // Create a User ----------------------------------------------
+
 const createUser = asyncHandler(async (req, res) => {
+  /**
+   * TODO:Get the email from req.body
+   */
   const email = req.body.email;
+  /**
+   * TODO:With the help of email find the user exists or not
+   */
   const findUser = await User.findOne({ email: email });
 
   if (!findUser) {
+    /**
+     * TODO:if user not found user create a new user
+     */
     const newUser = await User.create(req.body);
     res.json(newUser);
   } else {
+    /**
+     * TODO:if user found then thow an error: User already exists
+     */
     throw new Error("User Already Exists");
   }
 });
@@ -30,10 +43,17 @@ const createUser = asyncHandler(async (req, res) => {
 // Login a user
 const loginUserCtrl = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+  // check if user exists or not
   const findUser = await User.findOne({ email });
   if (findUser && (await findUser.isPasswordMatched(password))) {
     const refreshToken = await generateRefreshToken(findUser?._id);
-    await User.findByIdAndUpdate(findUser.id, { refreshToken }, { new: true });
+    const updateuser = await User.findByIdAndUpdate(
+      findUser.id,
+      {
+        refreshToken: refreshToken,
+      },
+      { new: true }
+    );
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       maxAge: 72 * 60 * 60 * 1000,
@@ -52,25 +72,32 @@ const loginUserCtrl = asyncHandler(async (req, res) => {
 });
 
 // admin login
+
 const loginAdmin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+  // check if user exists or not
   const findAdmin = await User.findOne({ email });
-  if (!findAdmin) throw new Error("Admin not found");
   if (findAdmin.role !== "admin") throw new Error("Not Authorised");
-  if (await findAdmin.isPasswordMatched(password)) {
-    const refreshToken = await generateRefreshToken(findAdmin._id);
-    await User.findByIdAndUpdate(findAdmin.id, { refreshToken }, { new: true });
+  if (findAdmin && (await findAdmin.isPasswordMatched(password))) {
+    const refreshToken = await generateRefreshToken(findAdmin?._id);
+    const updateuser = await User.findByIdAndUpdate(
+      findAdmin.id,
+      {
+        refreshToken: refreshToken,
+      },
+      { new: true }
+    );
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       maxAge: 72 * 60 * 60 * 1000,
     });
     res.json({
-      _id: findAdmin._id,
-      firstname: findAdmin.firstname,
-      lastname: findAdmin.lastname,
-      email: findAdmin.email,
-      mobile: findAdmin.mobile,
-      token: generateToken(findAdmin._id),
+      _id: findAdmin?._id,
+      firstname: findAdmin?.firstname,
+      lastname: findAdmin?.lastname,
+      email: findAdmin?.email,
+      mobile: findAdmin?.mobile,
+      token: generateToken(findAdmin?._id),
     });
   } else {
     throw new Error("Invalid Credentials");
@@ -78,6 +105,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
 });
 
 // handle refresh token
+
 const handleRefreshToken = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
   if (!cookie?.refreshToken) throw new Error("No Refresh Token in Cookies");
@@ -94,6 +122,7 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
 });
 
 // logout functionality
+
 const logout = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
   if (!cookie?.refreshToken) throw new Error("No Refresh Token in Cookies");
@@ -104,18 +133,20 @@ const logout = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: true,
     });
-    return res.sendStatus(204);
+    return res.sendStatus(204); // forbidden
   }
-  // fixed: use filter object
-  await User.findOneAndUpdate({ refreshToken }, { refreshToken: "" });
+  await User.findOneAndUpdate(refreshToken, {
+    refreshToken: "",
+  });
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: true,
   });
-  res.sendStatus(204);
+  res.sendStatus(204); // forbidden
 });
 
 // Update a user
+
 const updatedUser = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   // validateMongoDbId(_id);
@@ -140,9 +171,10 @@ const updatedUser = asyncHandler(async (req, res) => {
 });
 
 // save user Address
+
 const saveAddress = asyncHandler(async (req, res, next) => {
   const { _id } = req.user;
-  // //validateMongoDbId(_id);
+  // validateMongoDbId(_id);
 
   try {
     const updatedUser = await User.findByIdAndUpdate(
@@ -161,6 +193,7 @@ const saveAddress = asyncHandler(async (req, res, next) => {
 });
 
 // Get all users
+
 const getallUser = asyncHandler(async (req, res) => {
   try {
     const getUsers = await User.find().populate("wishlist");
@@ -171,9 +204,10 @@ const getallUser = asyncHandler(async (req, res) => {
 });
 
 // Get a single user
+
 const getaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  //validateMongoDbId(id);
+  // validateMongoDbId(id);
 
   try {
     const getaUser = await User.findById(id);
@@ -185,10 +219,11 @@ const getaUser = asyncHandler(async (req, res) => {
   }
 });
 
-// Delete a user
+// Get a single user
+
 const deleteaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  //validateMongoDbId(id);
+  // validateMongoDbId(id);
 
   try {
     const deleteaUser = await User.findByIdAndDelete(id);
@@ -202,13 +237,17 @@ const deleteaUser = asyncHandler(async (req, res) => {
 
 const blockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  // validateMongoDbId(id);
+  validateMongoDbId(id);
 
   try {
     const blockusr = await User.findByIdAndUpdate(
       id,
-      { isBlocked: true },
-      { new: true }
+      {
+        isBlocked: true,
+      },
+      {
+        new: true,
+      }
     );
     res.json(blockusr);
   } catch (error) {
@@ -218,13 +257,17 @@ const blockUser = asyncHandler(async (req, res) => {
 
 const unblockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  // validateMongoDbId(id);
+  validateMongoDbId(id);
 
   try {
     const unblock = await User.findByIdAndUpdate(
       id,
-      { isBlocked: false },
-      { new: true }
+      {
+        isBlocked: false,
+      },
+      {
+        new: true,
+      }
     );
     res.json({
       message: "User UnBlocked",
@@ -370,7 +413,7 @@ const updateProductQuantityFromCart = asyncHandler(async (req, res) => {
       _id: cartItemId,
     });
     cartItem.quantity = newQuantity;
-    await cartItem.save();
+    cartItem.save();
     res.json(cartItem);
   } catch (error) {
     throw new Error(error);
@@ -423,6 +466,8 @@ const getAllOrders = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   try {
     const orders = await Order.find().populate("user");
+    // .populate("orderItems.product")
+    // .populate("orderItems.color");
     res.json({
       orders,
     });
@@ -493,7 +538,9 @@ const getMonthWiseOrderIncome = asyncHandler(async (req, res) => {
     },
     {
       $group: {
-        _id: { month: "$month" },
+        _id: {
+          month: "$month",
+        },
         amount: { $sum: "$totalPriceAfterDiscount" },
         count: { $sum: 1 },
       },
@@ -536,6 +583,7 @@ const getYearlyTotalOrder = asyncHandler(async (req, res) => {
     {
       $group: {
         _id: null,
+        amount: { $sum: 1 },
         amount: { $sum: "$totalPriceAfterDiscount" },
         count: { $sum: 1 },
       },
@@ -571,6 +619,7 @@ module.exports = {
   getsingleOrder,
   updateOrder,
   getYearlyTotalOrder,
+
   removeProductFromCart,
   updateProductQuantityFromCart,
 };
